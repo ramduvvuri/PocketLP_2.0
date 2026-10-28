@@ -10,8 +10,16 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
       - uses: dtolnay/rust-toolchain@stable
-      - name: Run 28-Scenario Rust Acceptance Suite
+      - name: Build Frontend Dist & Icons
+        run: |
+          npm install
+          npm run build
+          npx tauri icon src-tauri/icons/icon.png
+      - name: Run Rust Acceptance Test Suite
         working-directory: src-tauri
         run: cargo test -- --nocapture
 
@@ -24,8 +32,10 @@ jobs:
         with:
           node-version: 20
       - uses: dtolnay/rust-toolchain@stable
-      - name: Install Frontend Dependencies
-        run: npm install
+      - name: Install Frontend Dependencies & Generate Icons
+        run: |
+          npm install
+          npx tauri icon src-tauri/icons/icon.png
       - name: Build Windows 11 x64 Installer
         run: npx tauri build
       - name: Upload Windows Installer ZIP Artifact
@@ -50,18 +60,20 @@ jobs:
           distribution: "temurin"
           java-version: "17"
       - uses: android-actions/setup-android@v3
-      - name: Install Android NDK & API 36 SDK
+      - name: Install Android SDK 35 & NDK
         run: |
           sdkmanager --install "platforms;android-35" "build-tools;35.0.0" "ndk;27.0.12077973"
           echo "NDK_HOME=$ANDROID_HOME/ndk/27.0.12077973" >> $GITHUB_ENV
       - uses: dtolnay/rust-toolchain@stable
         with:
           targets: aarch64-linux-android
-      - name: Install Dependencies & Init Android Project
+      - name: Build Signed Debug APK for iQOO Z9 5G (ARM64)
         run: |
           npm install
+          npm run build
+          npx tauri icon src-tauri/icons/icon.png
           npx tauri android init
-          npx tauri android build --apk --target aarch64
+          npx tauri android build --debug --apk --target aarch64
       - name: Upload Android ARM64 APK Artifact
         uses: actions/upload-artifact@v4
         with:
